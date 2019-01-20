@@ -100,7 +100,7 @@ class FourierAnalysis:
         return f
 
 
-    def compute_hermite_bases(self,x,n_funcs=10):
+    def compute_legendre_bases(self,x,n_funcs=10):
         n_points = x.shape[0]
         n_dim = x.shape[1]
         f = zeros((n_points, n_funs))
