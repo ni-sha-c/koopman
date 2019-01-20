@@ -12,8 +12,8 @@ class FourierAnalysis:
 
     def solve_primal(self, solver_map, u_init, n_steps, s):
         u = empty((n_steps, u_init.size))
-        u[-1] = u_init
-        for i in range(n_steps):
+        u[0] = u_init
+        for i in range(1,n_steps):
             u[i] = solver_map.primal_step(u[i-1],s,1)
         return u
     
@@ -81,36 +81,33 @@ class FourierAnalysis:
         return corr_fg
 
             
-    def compute_timeshifted_objective(self,solver,J,u0,n):
-        n_samples = u0.shape[0]
-        objective_trj = zeros((n_samples,n))
-        s0 = solver.s0
-        for i in range(n_samples):
-            u_trj = self.solve_primal(solver,u0[i],\
-                    n,s0).T
-            objective_trj[i] = J(u_trj)
-        return objective_trj
+    def compute_gaussian_bases(self,x,n_funs=10):
+        n_points = x.shape[0]
+        n_dim = x.shape[1]
+        f = zeros((n_points, n_funs))
+        mu = zeros((n_funs, n_dim))
+        inv_sigma = eye(n_dim)
+        for i in range(n_dim):
+            mu_min = 0.
+            mu_max = 1.
+            mu[:,i] = linspace(mu_min,\
+                    mu_max, n_funs)
+        for i in range(n_points):
+            for j in range(n_funs):
+                f[i,j] = exp(-0.5*(dot(x[i]-mu[j],\
+                        dot(inv_sigma,x[i]-mu[j]))))
+                f[i,j] /= sqrt(2.0*pi*det(inv_sigma))
+        return f
 
 
-    def compute_directional_derivative_timeshifted_objective(self,solver,DJ,u0,x,n_steps):
-        n_samples = u0.shape[0]
-        dJdx_trj = zeros((n_samples,n_steps))
-        s0 = solver.s0
-        v = zeros((n_steps,u0.shape[1]))
-        for i in range(n_samples):
-            u_trj = self.solve_primal(solver,u0[i],\
-                    n_steps,s0)
-            v[0] = x[i]
-            dJdx_trj[i,0] = dot(DJ(u_trj[0]),v[0])
-            for n in range(1,n_steps):
-                v[n] = dot(solver.gradFs(u_trj[n-1],s0),\
-                        v[n-1])
-                dJdx_trj[i,n] = dot(DJ(u_trj[n]),\
-                        v[n])
-        return dJdx_trj
+    def compute_hermite_bases(self,x,n_funcs=10):
+        n_points = x.shape[0]
+        n_dim = x.shape[1]
+        f = zeros((n_points, n_funs))
+        mu = zeros((n_funs, n_dim))
 
-
-
-    
-        
+        for n in range(n_funs):
+            for i in range(n_points):
+                f[i,n] = polynomial.hermite.hermval(x[i],
+        return f
 
