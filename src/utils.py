@@ -59,7 +59,7 @@ class HelperFunctions:
 
 
 
-    def compute_legendre_bases(self,x,n_funs=10):
+    def compute_legendre_bases(self,x,n_funs=5):
         n_points = x.shape[0]
         n_dim = x.shape[1]
         f = zeros((n_funs, n_dims, n_points))
