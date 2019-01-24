@@ -70,15 +70,12 @@ class HelperFunctions:
     def tensor_product(self,A):
         d = A.shape[0]
         n = A.shape[1]
-        A_01 = dot(A[0].reshape(n,1), \
-                A[1].reshape(1,n))
-        A_01 = A_01.T
-        A_012 = empty(n*n*n)
-        for i in range(n):
-            A_012[i*n*n:(i+1)*n*n] = dot(\
-                    A_01[i].reshape(n,1),\
-                    A[2].reshape(1,n)).reshape(n*n)
-        return A_012 
-            
-
-         
+        A_old = A[0].reshape((1,n))
+        for i in range(1,d):
+            A_new = empty((n**i,n))
+            for j in range(n**(i-1)):
+                A_new[j*n:(j+1)*n] = dot(\
+                    A_old[j].copy().reshape((n,1)),\
+                    A[i].reshape((1,n)))
+            A_old = A_new.copy()
+        return A_new.ravel()            
