@@ -36,4 +36,11 @@ class Solver:
         lyapunov_exponents, v_basis = eig(DF)
         return lyapunov_exponents, v_basis
 
+    def get_koopman_vectors(self):
+        DF = array([2.0,1.0,1.0,1.0]).reshape(2,2)
+        DF_T = DF.T
+        koopman_exponents, v_basis = eig(DF_T)
+        return koopman_exponents, v_basis
+
+
         

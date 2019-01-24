@@ -1,6 +1,7 @@
 #Statistical sensitivity analysis algorithm for maps.
 from pylab import *
 from numpy import *
+from utils import *
 from numba import jitclass
 from numba import float64, int64
 spec = []
@@ -17,6 +18,14 @@ class FourierAnalysis:
             u[i] = solver_map.primal_step(u[i-1],s,1)
         return u
     
+    def solve_onestep(self, solver_map, u0 , s):
+        n_samples = u0.shape[0]
+        n_dim = solver_map.u_init.size
+        u = empty((n_samples, n_dim))
+        for i in range(n_samples):
+            u[i] = solver_map.primal_step(u0[i],s,1)
+        return u
+
     
     def solve_unstable_direction(self, solver_map,\
             u, v_init, n_steps, s):
@@ -81,5 +90,23 @@ class FourierAnalysis:
         return corr_fg
 
             
+    def compute_gaussian_bases(self,x,n_funs=10):
+        n_points = x.shape[0]
+        n_dim = x.shape[1]
+        f = zeros((n_points, n_funs))
+        mu = zeros((n_funs, n_dim))
+        inv_sigma = eye(n_dim)
+        for i in range(n_dim):
+            mu_min = 0.
+            mu_max = 1.
+            mu[:,i] = linspace(mu_min,\
+                    mu_max, n_funs)
+        for i in range(n_points):
+            for j in range(n_funs):
+                f[i,j] = exp(-0.5*(dot(x[i]-mu[j],\
+                        dot(inv_sigma,x[i]-mu[j]))))
+                f[i,j] /= sqrt(2.0*pi*det(inv_sigma))
+        return f
 
 
+    
