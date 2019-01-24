@@ -62,10 +62,20 @@ class HelperFunctions:
     def compute_legendre_bases(self,x,n_funs=5):
         n_points = x.shape[0]
         n_dim = x.shape[1]
-        f = zeros((n_funs, n_dims, n_points))
+        n_basis = n_funs**n_dim
+        f = zeros((n_funs, n_points, n_dim))
         for n in range(n_funs):
-            f[n] = self.legendre_fun_nd(x, n)
-        return f.T
+            f[n] = self.legendre_fun_1d(x,n)
+        f = f.T
+        
+        g = zeros((n_dim, n_funs, n_points))
+        for d in range(n_dim):
+            g[d] = f[d].T
+        phi = zeros((n_points,n_basis)) 
+        for m in range(n_points):
+            phi[m] = self.tensor_product(\
+                    g[:,:,m].copy())
+        return phi
 
     def tensor_product(self,A):
         d = A.shape[0]
@@ -78,4 +88,4 @@ class HelperFunctions:
                     A_old[j].copy().reshape((n,1)),\
                     A[i].reshape((1,n)))
             A_old = A_new.copy()
-        return A_new.ravel()            
+        return A_old.ravel()            
