@@ -7,7 +7,7 @@ from matplotlib import *
 from fourierAnalysis import *
 from utils import *
 sys.path.insert(0,'../examples/')
-from linearcat import *
+from arnoldcat import *
 
 foa = FourierAnalysis()
 solver = Solver()
@@ -16,7 +16,7 @@ n_samples = 1000
 n_dim = solver.state_dim
 n_poly_order = 2
 n_basis = n_poly_order**n_dim
-is_attractor = False
+is_attractor = True
 if(is_attractor):
     u = foa.solve_primal(solver, \
         solver.u_init, \
@@ -47,5 +47,5 @@ for i in range(n_samples-1):
 
 G /= 1./(n_samples-1)
 A /= 1./(n_samples-1)
-K = inv(G)*A
+K = dot(inv(G),A)
 K_eig_values, K_eig_vecs = eig(K)
