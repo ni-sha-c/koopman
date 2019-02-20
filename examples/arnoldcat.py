@@ -30,6 +30,10 @@ class Solver:
             u1[1] = (u[0] + u[1])%1 
         return u1
 
+    def tangent_step(self, u, v):
+        DF = array([2.0,1.0,1.0,1.0]).reshape(2,2)
+        v = dot(DF, v)
+        return v
 
     def get_lyapunov_exponents_vectors(self):
         DF = array([2.0,1.0,1.0,1.0]).reshape(2,2)
