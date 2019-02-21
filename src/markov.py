@@ -1,7 +1,7 @@
 from numpy import *
 import sys
 sys.path.insert(0,'../examples/')
-from arnoldcat import *
+from sawtooth import *
 from numba import jit
 
 @jit(nopython=True)
@@ -34,6 +34,7 @@ def observable(u):
 
 solver = Solver()
 s0 = solver.s0
+s0[0] = 0.01
 n_trj = 10000
 u_init = solver.u_init
 u_init = solver.primal_step(u_init, s0, \
@@ -64,9 +65,9 @@ for n in range(1,n_trj):
     for i, fi in enumerate(f_grid):
         if(abs(fn - fi) < f_delta):
             chain[n] = i
-            P[chain[n-1],chain[n]] += 1.
+            P[chain[n],chain[n-1]] += 1.
             break
     
 for i in range(n_nodes):
-    P_tot = sum(P[i])
-    P[i] /= P_tot
+    p = sum(P[i])
+    P[i] /= p
