@@ -130,7 +130,7 @@ P = analytical_transition_matrix(P)
 l, W = eig(P.T)
 l, V = eig(P)
 
-
+'''
 n_grid = 100
 x_grid = linspace(0.,1.-1.e-3,n_grid)
 x_grid, y_grid = meshgrid(x_grid,x_grid)
@@ -310,7 +310,7 @@ cb = colorbar(im, ax=[ax,ax1], cax=cax)
 cb.ax.yaxis.set_tick_params(labelsize=24)
 tight_layout(pad=2,rect=[0.01,0.01,0.9,0.9])
 savefig("../examples/plots/arnoldUlam_stable_unstable_directions.png")
-
+'''
 
 
 
