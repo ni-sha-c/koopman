@@ -22,19 +22,17 @@ def compute_eigenfunction(v, x):
         nodes += nodes_x[k]*(n_nodes_per_dim**k)
     v_x = v[nodes]
     return v_x
-    
+
 @jit(nopython=True)
+def inverse_cat_map(x):
+    Ainv = array([1.,-1.,-1.,2.]).reshape(2,2)
+    return dot(Ainv,x)%1
+
 def compute_transfer_eigenfunction(v, x):
-    n_nodes = v.shape[0]
-    x_grid = linspace(0., 1., n_nodes + 1)
-    delta_x = x_grid[1] - x_grid[0]
-    for i in range(n_nodes + 1):
-        if(abs(x/2 - x_grid[i]) < delta_x):
-            node_x = i
-            break
-    node_x_1 = node_x
-    node_x_2 = (node_x + n_nodes//2) % n_nodes
-    return v[node_x_1]/2 + v[node_x_2]/2
+    x = inverse_cat_map(x)
+    return compute_eigenfunction(v,x)
+
+
 
 @jit(nopython=True)
 def solve_primal(solver, u0, s0, n=1):
@@ -120,7 +118,7 @@ u_trj = solve_primal(solver, u_init, s0, \
         n_trj)
 u_trj = u_trj.T
 n_dim = solver.state_dim
-n_nodes_per_dim = 27
+n_nodes_per_dim = 29
 chain_1d = empty((n_dim, n_trj), dtype='int')
 chain = zeros(n_trj, dtype='int')
 for i in range(n_dim):
@@ -129,24 +127,29 @@ for i in range(n_dim):
 n_nodes = n_nodes_per_dim**n_dim
 P = build_transition_matrix(chain, n_nodes)
 P = analytical_transition_matrix(P)
-l, V = eig(P.T)
+l, W = eig(P.T)
+l, V = eig(P)
 
 
 n_grid = 100
 x_grid = linspace(0.,1.-1.e-3,n_grid)
 x_grid, y_grid = meshgrid(x_grid,x_grid)
 eig_index = 1
+wi = W[:,eig_index]
 vi = V[:,eig_index]
 f_grid = empty_like(x_grid,dtype="complex")
 Kf_grid = empty_like(x_grid,dtype="complex")
-Pf_grid = empty_like(x_grid,dtype="complex")
+Pg_grid = empty_like(x_grid,dtype="complex")
 u_grid = array([hstack(x_grid),hstack(y_grid)])
-f_grid = compute_eigenfunction(vi,u_grid)
+f_grid = compute_eigenfunction(wi,u_grid)
 Kx_grid = solve_multiple_init_cond(solver, u_grid.T, s0, 1)
-Kf_grid = compute_eigenfunction(vi, Kx_grid.T)
-
+Kf_grid = compute_eigenfunction(wi, Kx_grid.T)
+g_grid = compute_eigenfunction(vi,u_grid)
+Pg_grid = compute_transfer_eigenfunction(vi, u_grid)
 f_grid = reshape(f_grid, (n_grid, n_grid))
 Kf_grid = reshape(Kf_grid, (n_grid, n_grid))
+g_grid = reshape(g_grid, (n_grid, n_grid))
+Pg_grid = reshape(Pg_grid, (n_grid, n_grid))
 
 fig = figure(figsize=[15,10])
 ax = fig.add_subplot(121) 
@@ -185,6 +188,69 @@ cb = colorbar(im, ax=[ax,ax1], cax=cax)
 cb.ax.yaxis.set_tick_params(labelsize=24)
 tight_layout(pad=2,rect=[0.01,0.01,0.9,0.9])
 savefig("../examples/plots/arnoldUlam_lefteigenvectors_P_imag.png")
+
+
+fig = figure(figsize=[15,10])
+ax = fig.add_subplot(121) 
+ax1 = fig.add_subplot(122)
+im = ax.contourf(x_grid, y_grid, \
+        real(l[eig_index]*g_grid), label="$\Phi$")
+ax1.contourf(x_grid, y_grid,\
+        real(Pg_grid), linewidth=3.0,label="$P\Phi$")
+ax.set_xlabel("x",fontsize=24)
+ax.set_title("Real part of $\lambda \Phi$",fontsize=24)
+ax.tick_params(axis="both",labelsize=24)
+ax1.set_xlabel("x",fontsize=24)
+ax1.set_title("Real part of $P\Phi$",fontsize=24)
+ax1.tick_params(axis="both",labelsize=24)
+cax = fig.add_axes([0.9, 0.1, 0.01, 0.7])
+cb = colorbar(im, ax=[ax,ax1], cax=cax)
+cb.ax.yaxis.set_tick_params(labelsize=24)
+tight_layout(pad=2,rect=[0.01,0.01,0.9,0.9])
+savefig("../examples/plots/arnoldUlam_righteigenvectors_P_real.png")
+
+fig = figure(figsize=[15,10])
+ax = fig.add_subplot(121) 
+ax1 = fig.add_subplot(122)
+ax.contourf(x_grid, y_grid, \
+        imag(l[eig_index]*g_grid))
+ax1.contourf(x_grid, y_grid,\
+        imag(Pg_grid))
+ax.set_xlabel("x",fontsize=24)
+ax.set_title("Imag part of $\lambda \Phi$",fontsize=24)
+ax.tick_params(axis="both",labelsize=24)
+ax1.set_xlabel("x",fontsize=24)
+ax1.set_title("Imag part of $P\Phi$",fontsize=24)
+ax1.tick_params(axis="both",labelsize=24)
+cax = fig.add_axes([0.9, 0.1, 0.01, 0.7])
+cb = colorbar(im, ax=[ax,ax1], cax=cax)
+cb.ax.yaxis.set_tick_params(labelsize=24)
+tight_layout(pad=2,rect=[0.01,0.01,0.9,0.9])
+savefig("../examples/plots/arnoldUlam_righteigenvectors_P_imag.png")
+
+fig = figure(figsize=[15,10])
+ax = fig.add_subplot(121) 
+ax1 = fig.add_subplot(122)
+ax.contourf(x_grid, y_grid, \
+        abs(Pg_grid - l[eig_index]*g_grid))
+ax1.contourf(x_grid, y_grid,\
+        abs(Kf_grid - l[eig_index]*f_grid))
+ax.set_xlabel("x",fontsize=24)
+ax.set_title("$|P\Phi - \lambda \Phi|$",fontsize=24)
+ax.tick_params(axis="both",labelsize=24)
+ax1.set_xlabel("x",fontsize=24)
+ax1.set_title("$|K \Psi - \lambda \Psi|$",fontsize=24)
+ax1.tick_params(axis="both",labelsize=24)
+cax = fig.add_axes([0.9, 0.1, 0.01, 0.7])
+cb = colorbar(im, ax=[ax,ax1], cax=cax)
+cb.ax.yaxis.set_tick_params(labelsize=24)
+tight_layout(pad=2,rect=[0.01,0.01,0.9,0.9])
+savefig("../examples/plots/arnoldUlam_error_comparison.png")
+
+
+
+
+
 
 
 fig = figure(figsize=[15,10])
@@ -248,24 +314,4 @@ savefig("../examples/plots/arnoldUlam_stable_unstable_directions.png")
 
 
 
-'''
-fig = figure(figsize=[15,10])
-ax = fig.add_subplot(121) 
-ax1 = fig.add_subplot(122)
-n_fac = 5
-x_grid = linspace(0.,1.,n_nodes*n_fac)
-n_plots = 5
-for i in range(n_plots):
-    Vi_grid = tile(V[:,i],(n_fac,1)).T.\
-            reshape(n_nodes*n_fac,1)
-    ax.plot(x_grid, real(Vi_grid), linewidth=2.0)
-    ax1.plot(x_grid, imag(Vi_grid), linewidth=2.0)
-ax.set_xlabel("x",fontsize=24)
-ax.set_title("real part of right eigenvectors of P",fontsize=20)
-ax.tick_params(axis="both",labelsize=24)
-ax1.set_xlabel("x",fontsize=24)
-ax1.set_title("imag part of right eigenvectors of P",fontsize=20)
-ax1.tick_params(axis="both",labelsize=24)
-savefig("../examples/plots/sawtoothUlam_transfer_eigenvectors.png")
 
-'''
