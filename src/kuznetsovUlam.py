@@ -3,7 +3,7 @@ import sys
 from numba import jit
 from matplotlib.pyplot import *
 sys.path.insert(0,'../examples/')
-from arnoldcat import *
+from kuznetsov_poincare import *
 
 
 #@jit(nopython=True)
@@ -96,15 +96,6 @@ def build_chain(x, n_nodes):
                 break
         chain_x[j] = node_x
     return chain_x
-
-@jit(nopython=True)
-def analytical_transition_matrix(P):
-    n_nodes = P.shape[0]
-    for i in range(n_nodes):
-        for j in range(n_nodes):
-            if(P[i,j] > 0.2):
-                P[i,j] = 0.25
-    return P
 
 
 solver = Solver()
